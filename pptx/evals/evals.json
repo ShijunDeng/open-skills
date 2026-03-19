@@ -1,0 +1,110 @@
+{
+  "skill_name": "pptx",
+  "evals": [
+    {
+      "id": 1,
+      "name": "microservices-architecture-deck",
+      "prompt": "给我做一个微服务架构迁移方案的PPT。背景：我们的单体应用要拆分成15个微服务，涉及用户服务、订单服务、支付服务等，需要介绍整体架构图、迁移路径（3个阶段）、技术选型（Spring Boot + Kubernetes + Kafka）、风险和收益分析。面向技术总监和CTO，大概10-12张幻灯片。保存到 /tmp/pptx-eval/microservices.pptx",
+      "expected_output": "12张左右的PPTX，白色背景+红白灰配色，包含架构图（用drawio或PptxGenJS绘制），内容密度高，有迁移路径流程图、风险收益分析、技术选型对比",
+      "files": [],
+      "assertions": [
+        {
+          "name": "file_exists",
+          "description": "PPTX文件成功生成",
+          "type": "file_exists",
+          "path": "/tmp/pptx-eval/microservices.pptx"
+        },
+        {
+          "name": "slide_count_sufficient",
+          "description": "幻灯片数量在10张以上",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/microservices.pptx'); assert len(p.slides) >= 10, f'Only {len(p.slides)} slides'"
+        },
+        {
+          "name": "has_architecture_content",
+          "description": "包含架构或流程相关内容（图形或文字）",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/microservices.pptx'); text = ' '.join([s.shapes.title.text if s.shapes.title else '' for s in p.slides]); has_arch = any(kw in text for kw in ['架构', '微服务', '迁移', '服务']); assert has_arch, f'No architecture content in titles: {text}'"
+        },
+        {
+          "name": "has_images_or_shapes",
+          "description": "包含图形元素（图片、形状等），不只是纯文字",
+          "type": "python",
+          "code": "from pptx import Presentation; from pptx.util import Inches; p = Presentation('/tmp/pptx-eval/microservices.pptx'); shape_counts = [len([s for s in slide.shapes if s.shape_type in [1,13,6]]) for slide in p.slides]; total = sum(shape_counts); assert total > 10, f'Too few shapes/images: {total} total across {len(p.slides)} slides'"
+        },
+        {
+          "name": "white_background",
+          "description": "内容幻灯片背景为白色或浅色（非深色背景）",
+          "type": "python",
+          "code": "from pptx import Presentation; from pptx.dml.color import RGBColor; p = Presentation('/tmp/pptx-eval/microservices.pptx'); light_count = 0; dark_count = 0;\nfor slide in p.slides[1:]:\n    bg = slide.background.fill\n    try:\n        bg.fore_color.rgb\n        r,g,b = bg.fore_color.rgb\n        if r+g+b > 500: light_count+=1\n        else: dark_count+=1\n    except: light_count+=1\nassert light_count >= dark_count, f'Too many dark slides: {dark_count} dark vs {light_count} light'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "product-metrics-report",
+      "prompt": "帮我制作一个产品季度数据汇报PPT。数据如下：\n- MAU: 230万（环比+18%），DAU: 45万（环比+12%），次日留存: 41%（行业均值35%）\n- 核心功能使用率：AI助手62%，协作编辑48%，评论功能31%，导出功能19%\n- 付费转化漏斗：访问→注册 32%，注册→试用 58%，试用→付费 23%，付费→续费 81%\n- NPS: 52（上季度47），主要正面反馈：速度快、界面简洁；主要负面：缺少移动端、定价偏高\n- 下季度重点：移动端APP（预计Q3上线）、价格策略优化、企业版功能\n面向产品委员会，8-10张。保存到 /tmp/pptx-eval/product-metrics.pptx",
+      "expected_output": "9张左右PPTX，白色背景红白灰配色，含数据图表（柱状图、漏斗图、指标卡片），内容密度高，关键数据有大数字callout展示",
+      "files": [],
+      "assertions": [
+        {
+          "name": "file_exists",
+          "description": "PPTX文件成功生成",
+          "type": "file_exists",
+          "path": "/tmp/pptx-eval/product-metrics.pptx"
+        },
+        {
+          "name": "slide_count_sufficient",
+          "description": "幻灯片数量在8张以上",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/product-metrics.pptx'); assert len(p.slides) >= 8, f'Only {len(p.slides)} slides'"
+        },
+        {
+          "name": "contains_key_metrics",
+          "description": "包含关键数据指标（MAU、留存、NPS等）",
+          "type": "python",
+          "code": "import subprocess; result = subprocess.run(['python', '-m', 'markitdown', '/tmp/pptx-eval/product-metrics.pptx'], capture_output=True, text=True); text = result.stdout; found = [kw for kw in ['MAU', '留存', 'NPS', '转化', 'DAU'] if kw in text]; assert len(found) >= 3, f'Missing key metrics, only found: {found}'"
+        },
+        {
+          "name": "has_charts_or_shapes",
+          "description": "包含图表或形状元素（不只是文字）",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/product-metrics.pptx'); has_chart = any(s.shape_type == 3 for slide in p.slides for s in slide.shapes); has_shapes = sum(1 for slide in p.slides for s in slide.shapes if s.shape_type == 1) > 5; assert has_chart or has_shapes, 'No charts or substantial shapes found'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "cicd-pipeline-architecture",
+      "prompt": "给我做一个CI/CD流水线架构介绍的PPT。内容：\n- 现状：研发团队50人，每天100+次提交，发布周期2周，故障恢复时间平均4小时\n- 目标架构：代码提交→单元测试→代码扫描（SonarQube）→构建镜像→集成测试→灰度发布→生产部署\n- 关键工具链：GitLab CI + ArgoCD + Harbor + Prometheus/Grafana\n- 质量门禁：覆盖率≥80%、Critical漏洞=0、性能基准±5%\n- 实施计划：4个阶段，12周\n需要包含流水线流程图，用drawio MCP绘制。8-10张幻灯片。保存到 /tmp/pptx-eval/cicd-pipeline.pptx",
+      "expected_output": "9张左右PPTX，白色背景红白灰配色，包含CI/CD流水线流程图（drawio生成），有工具链介绍、质量门禁表格、实施路线图，内容密度高",
+      "files": [],
+      "assertions": [
+        {
+          "name": "file_exists",
+          "description": "PPTX文件成功生成",
+          "type": "file_exists",
+          "path": "/tmp/pptx-eval/cicd-pipeline.pptx"
+        },
+        {
+          "name": "slide_count_sufficient",
+          "description": "幻灯片数量在8张以上",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/cicd-pipeline.pptx'); assert len(p.slides) >= 8, f'Only {len(p.slides)} slides'"
+        },
+        {
+          "name": "contains_pipeline_content",
+          "description": "包含CI/CD、流水线相关关键词",
+          "type": "python",
+          "code": "import subprocess; result = subprocess.run(['python', '-m', 'markitdown', '/tmp/pptx-eval/cicd-pipeline.pptx'], capture_output=True, text=True); text = result.stdout; found = [kw for kw in ['CI', 'CD', '流水线', 'ArgoCD', 'GitLab', '质量', '发布'] if kw in text]; assert len(found) >= 4, f'Missing pipeline content, only found: {found}'"
+        },
+        {
+          "name": "has_flow_diagram",
+          "description": "包含流程图（图片形式嵌入或形状绘制）",
+          "type": "python",
+          "code": "from pptx import Presentation; p = Presentation('/tmp/pptx-eval/cicd-pipeline.pptx'); img_count = sum(1 for slide in p.slides for s in slide.shapes if s.shape_type == 13); shape_count = sum(1 for slide in p.slides for s in slide.shapes if s.shape_type == 1); assert img_count > 0 or shape_count > 15, f'No diagram found: {img_count} images, {shape_count} shapes'"
+        }
+      ]
+    }
+  ]
+}
