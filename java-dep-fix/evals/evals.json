@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "skill_name": "java-dep-fix",
+  "_comment": "直接对接 harbor-bump-bench 真实用例，镜像/路径/断言均与 https://github.com/AgentCenterForCoding/harbor-bump-bench 保持一致",
+  "evals": [
+    {
+      "id": 1,
+      "name": "task-bump-guhilling-jakarta-annotation",
+      "prompt": "# Fix Maven Compilation Failure: jakarta.annotation-api 1.3.5 -> 2.0.0\n\n## Context\n\nProject `cdi-test` (by guhilling) has a **COMPILATION_FAILURE** after a dependency upgrade bot bumped\n`jakarta.annotation:jakarta.annotation-api` from `1.3.5` to `2.0.0` (major update).\n\nReference PR: https://github.com/guhilling/cdi-test/pull/173\n\n## Your Task\n\nThe source code is in `/cdi-test`. Fix all compilation errors so that `mvn compile` succeeds.",
+      "expected_output": "将 javax.annotation.* import 替换为 jakarta.annotation.*，mvn compile 返回 BUILD SUCCESS。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "assert-1",
+          "name": "compilation-passes",
+          "description": "mvn compile 应返回 BUILD SUCCESS，0 个编译错误",
+          "type": "scripted",
+          "verifier_cmd": "cd /cdi-test && mvn compile -B -q 2>&1"
+        },
+        {
+          "id": "assert-2",
+          "name": "minimal-diff",
+          "description": "修改应最小化，只改动必要的 import 语句，不引入无关重构",
+          "type": "llm",
+          "rubric": "查看 Agent 修改了哪些文件和内容。若 Agent 除了修复 import 之外还改动了业务逻辑、重命名变量或重构方法，则 passed=false。修改应仅限于将 javax.annotation 替换为 jakarta.annotation 的 import 行。"
+        },
+        {
+          "id": "assert-3",
+          "name": "source-code-correctness",
+          "description": "Agent 实际修改的 Java 源文件应正确完成 javax→jakarta 命名空间迁移",
+          "type": "llm_output",
+          "target_files": [
+            "/cdi-test/src/main/java/de/hilling/junit/cdi/scope/TestSuiteScoped.java",
+            "/cdi-test/src/main/java/de/hilling/junit/cdi/scope/TestScoped.java"
+          ],
+          "rubric": "评判标准：1. 所有 javax.annotation.* import 是否已替换为 jakarta.annotation.*（如 @Priority, @Resource 等注解）；2. 替换后的 import 路径是否是 jakarta.annotation-api 2.0.0 中实际存在的合法类；3. 注解使用处是否与新 API 语义一致（无参数变更遗漏）；4. 是否保留了原有代码结构，无多余修改",
+          "reference_answer": "import jakarta.annotation.Priority; // 替换 javax.annotation.Priority\nimport jakarta.annotation.Resource; // 替换 javax.annotation.Resource（如有）"
+        }
+      ],
+      "harbor": {
+        "timeout_sec": 1800,
+        "verifier_timeout_sec": 600,
+        "dockerfile": "# Stage 1: breaking project source\nFROM ghcr.io/chains-project/breaking-updates:4bba3fb6147e72946f64724fe55eee5d15ff6206-breaking AS breaking_src\n\nFROM ubuntu:22.04\nENV DEBIAN_FRONTEND=noninteractive\nRUN apt-get update && apt-get install -y --no-install-recommends curl bash git procps openjdk-11-jdk-headless maven && rm -rf /var/lib/apt/lists/*\nENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64\nENV PATH=$JAVA_HOME/bin:$PATH\nCOPY --from=breaking_src /cdi-test /cdi-test\nCOPY --from=breaking_src /root/.m2 /root/.m2\nWORKDIR /cdi-test",
+        "build_timeout_sec": 900,
+        "cpus": 2,
+        "memory_mb": 6144,
+        "storage_mb": 20480,
+        "partial_credit": false
+      },
+      "tags": ["jakarta-migration", "javax-to-jakarta", "namespace-change", "bump-bench"]
+    },
+    {
+      "id": 2,
+      "name": "task-redisgraph-jredisgraph-jedis",
+      "prompt": "# Fix Maven Compilation Failure: jedis 3.9.0 -> 4.3.2\n\n## Context\n\nProject `JRedisGraph` (by RedisGraph) has a **COMPILATION_FAILURE** after a dependency upgrade bot bumped\n`redis.clients:jedis` from `3.9.0` to `4.3.2` (major update).\n\nReference PR: https://github.com/RedisGraph/JRedisGraph/pull/160\n\n## Your Task\n\nThe source code is in `/JRedisGraph`. Fix all compilation errors so that `mvn compile` succeeds.",
+      "expected_output": "迁移到 jedis 4.x API（移除已删除的 BinaryJedis，修复 JedisPool 构造方式，适配 Pipeline API 变更），mvn compile 返回 BUILD SUCCESS。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "assert-1",
+          "name": "compilation-passes",
+          "description": "mvn compile 应返回 BUILD SUCCESS，0 个编译错误",
+          "type": "scripted",
+          "verifier_cmd": "cd /JRedisGraph && mvn compile -B -q 2>&1"
+        },
+        {
+          "id": "assert-2",
+          "name": "jedis-api-migration-quality",
+          "description": "Agent 实际修改的源文件应正确迁移到 jedis 4.x API",
+          "type": "llm_output",
+          "target_files": [
+            "/JRedisGraph/src/main/java/com/redislabs/redisgraph/impl/api/RedisGraph.java",
+            "/JRedisGraph/src/main/java/com/redislabs/redisgraph/impl/api/ContextedRedisGraph.java",
+            "/JRedisGraph/pom.xml"
+          ],
+          "rubric": "评判标准：1. 是否正确移除了对已删除类（如 BinaryJedis、BinaryJedisCluster）的引用或改用替代 API；2. JedisPool 构造方式是否适配 4.x（从 new JedisPool(host,port) 到 JedisPooled 或 ConnectionPoolConfig）；3. Pipeline API 变更是否正确适配（Response 泛型、sync() 调用）；4. pom.xml 中 jedis 版本是否为 4.3.2 且无其他版本冲突引入；5. 代码是否保持了原有的 Redis 命令语义（GRAPH.QUERY 等）"
+        }
+      ],
+      "harbor": {
+        "timeout_sec": 1800,
+        "verifier_timeout_sec": 600,
+        "dockerfile": "# Stage 1: breaking project source (Alpine-based)\nFROM ghcr.io/chains-project/breaking-updates:ea03f6488449fcfe8cd0a678b4c64891e1427a32-breaking AS breaking_src\n\nFROM ubuntu:22.04\nENV DEBIAN_FRONTEND=noninteractive\nRUN apt-get update && apt-get install -y --no-install-recommends curl bash git procps openjdk-11-jdk-headless maven && rm -rf /var/lib/apt/lists/*\nENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64\nENV PATH=$JAVA_HOME/bin:$PATH\nCOPY --from=breaking_src /JRedisGraph /JRedisGraph\nCOPY --from=breaking_src /root/.m2 /root/.m2\nWORKDIR /JRedisGraph",
+        "build_timeout_sec": 900,
+        "cpus": 2,
+        "memory_mb": 6144,
+        "storage_mb": 20480,
+        "partial_credit": false
+      },
+      "tags": ["jedis", "redis", "major-version-upgrade", "bump-bench"]
+    },
+    {
+      "id": 3,
+      "name": "task-bump-zold-io-cactoos",
+      "prompt": "# Fix Maven Compilation Failure: cactoos 0.35 -> 0.55.0\n\n## Context\n\nProject `java-api` (by zold-io) has a **COMPILATION_FAILURE** after a dependency upgrade bot bumped\n`org.cactoos:cactoos` from `0.35` to `0.55.0` (minor update).\n\nReference PR: https://github.com/zold-io/java-api/pull/101\n\n## Your Task\n\nThe source code is in `/java-api`. Fix all compilation errors so that `mvn compile` succeeds.",
+      "expected_output": "系统性修复 cactoos 0.35→0.55 间大量 API 变更（类重命名、包路径变更），mvn compile 返回 BUILD SUCCESS，业务逻辑保持不变。",
+      "files": [],
+      "assertions": [
+        {
+          "id": "assert-1",
+          "name": "compilation-passes",
+          "description": "mvn compile 应返回 BUILD SUCCESS，所有文件 0 个编译错误",
+          "type": "scripted",
+          "verifier_cmd": "cd /java-api && mvn compile -B -q 2>&1"
+        },
+        {
+          "id": "assert-2",
+          "name": "cactoos-migration-quality",
+          "description": "Agent 实际修改的源文件应正确迁移 cactoos 0.35→0.55 的 API 变更",
+          "type": "llm_output",
+          "target_files": [
+            "/java-api/src/main/java/io/zold/api/CpTransaction.java",
+            "/java-api/src/main/java/io/zold/api/RtTransaction.java",
+            "/java-api/src/main/java/io/zold/api/Wallet.java",
+            "/java-api/pom.xml"
+          ],
+          "rubric": "评判标准：1. cactoos 类重命名是否正确适配（如 StickyScalar→Sticky、IoCheckedScalar→IoChecked、UncheckedScalar→Unchecked 等）；2. 包路径变更是否正确处理（org.cactoos.scalar → org.cactoos.scalar 内部类名变更）；3. 已移除的 API 是否用等价替代（如 TextOf、InputOf 签名变更）；4. 原有业务逻辑是否保持不变（交易金额计算、钱包操作语义）；5. pom.xml 中 cactoos 版本是否为 0.55.0"
+        },
+        {
+          "id": "assert-3",
+          "name": "batch-fix-consistency",
+          "description": "多文件批量修复时，Agent 的修改应风格一致、无遗漏",
+          "type": "llm",
+          "rubric": "查看 Agent 的推理过程：1. 是否系统性地分析了所有编译错误（而非逐个修复）；2. 是否识别出 cactoos API 变更的模式（如类重命名规律）并批量应用；3. 是否检查了所有受影响文件而非只修了报错的前几个。若 Agent 采用逐个 fix-compile-check 循环但最终遗漏了部分文件，则 passed=false"
+        }
+      ],
+      "harbor": {
+        "timeout_sec": 1800,
+        "verifier_timeout_sec": 600,
+        "dockerfile": "# Stage 1: breaking project source\nFROM ghcr.io/chains-project/breaking-updates:38c9915f0cfdf0c1a2b17c3c6f283c23a0aac0cf-breaking AS breaking_src\n\nFROM ubuntu:22.04\nENV DEBIAN_FRONTEND=noninteractive\nRUN apt-get update && apt-get install -y --no-install-recommends curl bash git procps openjdk-11-jdk-headless maven && rm -rf /var/lib/apt/lists/*\nENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64\nENV PATH=$JAVA_HOME/bin:$PATH\nCOPY --from=breaking_src /java-api /java-api\nCOPY --from=breaking_src /root/.m2 /root/.m2\nWORKDIR /java-api",
+        "build_timeout_sec": 900,
+        "cpus": 2,
+        "memory_mb": 6144,
+        "storage_mb": 20480,
+        "partial_credit": false
+      },
+      "tags": ["cactoos", "batch-fix", "multi-file", "symbol-missing", "bump-bench"]
+    }
+  ]
+}

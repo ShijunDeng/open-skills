@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "skill_name": "java-dep-fix",
+  "checks": [
+    {
+      "id": "chk-1",
+      "name": "frontmatter-valid",
+      "type": "frontmatter",
+      "description": "SKILL.md frontmatter 必须包含 name 和 description，name 为小写连字符格式",
+      "rules": {
+        "required_fields": ["name", "description"],
+        "name_pattern": "^[a-z][a-z0-9-]*$",
+        "description_min_length": 20,
+        "description_max_length": 500
+      }
+    },
+    {
+      "id": "chk-2",
+      "name": "trigger-accuracy",
+      "type": "trigger_match",
+      "description": "验证 java-dep-fix 的触发场景与实际用户意图匹配",
+      "test_inputs": [
+        { "query": "Fix Maven compilation failure after dependency upgrade", "expected_trigger": true },
+        { "query": "帮我修复依赖升级后的编译失败", "expected_trigger": true },
+        { "query": "bump dependency compile error", "expected_trigger": true },
+        { "query": "cannot find symbol after version bump", "expected_trigger": true },
+        { "query": "package does not exist maven compile error", "expected_trigger": true },
+        { "query": "帮我写一个 Spring Boot 应用", "expected_trigger": false },
+        { "query": "优化 Maven 构建速度", "expected_trigger": false },
+        { "query": "设计微服务架构", "expected_trigger": false },
+        { "query": "帮我配置 CI/CD 流水线", "expected_trigger": false },
+        { "query": "Write a Python web scraper", "expected_trigger": false }
+      ],
+      "threshold": 0.85
+    },
+    {
+      "id": "chk-3",
+      "name": "referenced-files-exist",
+      "type": "file_reference",
+      "description": "SKILL.md 中引用的文件路径必须真实存在",
+      "skill_root": ".",
+      "ignore_patterns": ["http://", "https://"]
+    },
+    {
+      "id": "chk-4",
+      "name": "no-contradictions",
+      "type": "content_review",
+      "description": "SKILL.md 指导内容不应有自相矛盾或歧义指令",
+      "rubric": "审查 SKILL.md 正文：1. 诊断优先级步骤是否前后一致（如 Step 0 → Step 1 → Step 2 的顺序是否合理）；2. 修复策略的条件判断是否有歧义（如何时该'逐个修复' vs '批量迁移'）；3. 是否有引用了不存在的工具/命令/API；4. 代码示例中的命令是否可执行"
+    }
+  ]
+}

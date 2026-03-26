@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0",
+  "skill_name": "java-dep-fix",
+  "iteration": 1,
+  "backend": "harbor",
+  "n_trials_per_eval": 3,
+  "generated_at": "2026-03-24T14:30:00Z",
+  "summary": {
+    "with_skill": {
+      "pass_rate":        { "mean": 0.78, "stddev": 0.11 },
+      "duration_seconds": { "mean": 245.6, "stddev": 38.2 },
+      "total_tokens":     { "mean": 92400, "stddev": 8700 }
+    },
+    "baseline": {
+      "pass_rate":        { "mean": 0.33, "stddev": 0.14 },
+      "duration_seconds": { "mean": 198.3, "stddev": 41.5 },
+      "total_tokens":     { "mean": 78600, "stddev": 9200 }
+    },
+    "delta": {
+      "pass_rate":        0.45,
+      "duration_seconds": 47.3,
+      "comment": "with_skill 耗时多 47s（+24%），属预期代价——Skill 引导 Agent 做更系统的 API 变更分析而非逐错修复"
+    }
+  },
+  "evals": [
+    {
+      "eval_id": 1,
+      "eval_name": "task-bump-guhilling-jakarta-annotation",
+      "with_skill": { "pass_rate": 1.0, "duration_seconds": 142.3 },
+      "baseline":   { "pass_rate": 0.67, "duration_seconds": 121.7 },
+      "assertions": [
+        {
+          "id": "assert-1",
+          "text": "compilation-passes",
+          "type": "scripted",
+          "with_skill_passed": true,
+          "baseline_passed": true
+        },
+        {
+          "id": "assert-2",
+          "text": "minimal-diff",
+          "type": "llm",
+          "with_skill_passed": true,
+          "baseline_passed": false
+        },
+        {
+          "id": "assert-3",
+          "text": "source-code-correctness",
+          "type": "llm_output",
+          "with_skill_passed": true,
+          "baseline_passed": true
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "task-redisgraph-jredisgraph-jedis",
+      "with_skill": { "pass_rate": 0.67, "duration_seconds": 320.8 },
+      "baseline":   { "pass_rate": 0.0, "duration_seconds": 275.4 },
+      "assertions": [
+        {
+          "id": "assert-1",
+          "text": "compilation-passes",
+          "type": "scripted",
+          "with_skill_passed": true,
+          "baseline_passed": false
+        },
+        {
+          "id": "assert-2",
+          "text": "jedis-api-migration-quality",
+          "type": "llm_output",
+          "with_skill_passed": false,
+          "baseline_passed": false
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "task-bump-zold-io-cactoos",
+      "with_skill": { "pass_rate": 0.67, "duration_seconds": 273.7 },
+      "baseline":   { "pass_rate": 0.33, "duration_seconds": 197.8 },
+      "assertions": [
+        {
+          "id": "assert-1",
+          "text": "compilation-passes",
+          "type": "scripted",
+          "with_skill_passed": true,
+          "baseline_passed": false
+        },
+        {
+          "id": "assert-2",
+          "text": "cactoos-migration-quality",
+          "type": "llm_output",
+          "with_skill_passed": true,
+          "baseline_passed": false
+        },
+        {
+          "id": "assert-3",
+          "text": "batch-fix-consistency",
+          "type": "llm",
+          "with_skill_passed": false,
+          "baseline_passed": false
+        }
+      ]
+    }
+  ],
+  "analyst_observations": [
+    "eval-1（jakarta-annotation）的 baseline compilation-passes 也能通过（pass_rate=0.67），区分度不足——javax→jakarta 的简单命名空间替换对 Agent 基础能力来说不够有挑战性，建议增加多模块项目或间接依赖场景",
+    "eval-1 的 source-code-correctness（llm_output）在两组均 pass，进一步印证该用例难度偏低，建议在 rubric 中加入对间接 transitive 依赖处理的评判",
+    "eval-2（jedis-upgrade）的 jedis-api-migration-quality（llm_output）在 with_skill 和 baseline 均 fail——Skill 虽引导 Agent 完成编译（scripted pass），但迁移质量不达标（仍在用 deprecated 构造方式），建议在 SKILL.md 中补充 jedis 4.x 的 JedisPooled 最佳实践",
+    "eval-3（cactoos）的 batch-fix-consistency（llm, trace 评判）在 with_skill 也 fail——Agent 仍采用逐错修复策略而非批量模式识别，Skill 中关于「系统性分析 API 变更模式」的指导未生效，建议将 SKILL.md 中的批量修复策略从建议改为强指令",
+    "eval-2 的 with_skill stddev 较高（3 次 trial 中仅 2 次 compilation-passes），建议将 n_trials 从 3 提升到 5 以获得更稳定的 pass_rate 估算",
+    "整体 delta=+0.45，Skill 增效显著（>0.2 阈值），但主要贡献来自 eval-1 的简单场景；在复杂场景（eval-2/3）增效有限，下一轮迭代应聚焦 SKILL.md 中 API 迁移深度指导的优化"
+  ]
+}
