@@ -10,49 +10,65 @@ license: Proprietary. LICENSE.txt has complete terms
 
 | Task | Guide |
 |------|-------|
+| **Start Parameters** | Define Archetype, Brand, Audience, Scene, View Mode |
 | Read/analyze content | `python -m markitdown presentation.pptx` |
 | Edit or create from template | Read [editing.md](editing.md) |
 | Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
+| High-Density Layouts | Read [density-playbook.md](density-playbook.md) |
 
 ---
 
-## Reading Content
+## Project Setup: The Five Parameters
 
-```bash
-# Text extraction
-python -m markitdown presentation.pptx
+Before starting any PPT task, you **must** lock these five parameters. Without them, there is no standard for design or review.
 
-# Visual overview
-python scripts/thumbnail.py presentation.pptx
-
-# Raw XML
-python scripts/office/unpack.py presentation.pptx unpacked/
-```
-
----
-
-## Editing Workflow
-
-**Read [editing.md](editing.md) for full details.**
-
-1. Analyze template with `thumbnail.py`
-2. Unpack → manipulate slides → edit content → clean → pack
+| Parameter | Description | Examples |
+|-----------|-------------|----------|
+| **Archetype** | Determines density, font matrix, and structure | Strategic Overview, KPI Dashboard, Keynote, PDF Handout |
+| **Brand** | The visual DNA / color palette | Red/White/Gray (Default), Huawei, Apple, Google |
+| **Audience** | Who is reading/watching | CTO, Investors, Technical Team, Public |
+| **Scene** | Where it is used | Annual Report, Customer Proposal, Internal Spike |
+| **View Mode** | Primary reading method | **Presentation** (Large screen) or **Document** (PDF/Reading) |
 
 ---
 
-## Creating from Scratch
+## Roles & Workflow
 
-**Read [pptxgenjs.md](pptxgenjs.md) for full details.**
+A professional deck follows a "Production Line" model rather than a single-person task.
 
-Use when no template or reference presentation is available.
+| Role | Responsibility |
+|------|----------------|
+| **Author** | Content planning, PptxGenJS/XML implementation, self-check |
+| **D1 Reviewer** | **Layout & Info**: Logic, hierarchy, density, technical accuracy |
+| **D2 Reviewer** | **Aesthetic & Brand**: Visual consistency, colors, typography, "vibe" |
+
+### Scene Routing
+
+1.  **A: Content Planning**: Lock 5 parameters + define "one-sentence goal" per slide.
+2.  **B: Style Tile**: Create 1-2 core slides to lock the visual direction.
+3.  **C: Batch Production**: Implement the remaining slides.
+4.  **D: Visual Review Gate**: 6-item input package + D1/D2 inspection.
+5.  **E: Export Truth Gate**: Verify native objects, font embedding, and file integrity.
+6.  **F: Delivery**: Final PDF/PPTX export + preview link.
 
 ---
 
 ## Design System: Red / White / Gray
 
-The default visual style is **white background + red accents + gray text hierarchy**. This produces clean, professional slides that work for both technical and executive audiences.
+The default visual style is **white background + red accents + gray text hierarchy**.
 
-### Color Tokens
+### Archetype Font Matrix
+
+**The Archetype decides the font size, not the other way around.**
+
+| Archetype | Body Min | Aux/Label Min | Typical Use Case |
+|-----------|----------|---------------|------------------|
+| **Keynote / Presentation** | 14pt | 12pt | Large screen, low density, high impact |
+| **Strategic / Technical** | 10pt | 8pt | High density, internal analysis, complex systems |
+| **KPI Dashboard** | 12pt | 9pt | Data-heavy, monitoring, reporting |
+| **PDF Handout / Document** | 9pt | 8pt | Deep reading, printed materials, detailed evidence |
+
+### Color Tokens (Default)
 
 | Role | Hex | Usage |
 |------|-----|-------|
@@ -63,35 +79,48 @@ The default visual style is **white background + red accents + gray text hierarc
 | **Secondary text** | `666666` | Captions, source lines, sub-bullets |
 | **Divider / border** | `CCCCCC` | Table borders, card outlines, separator lines |
 | **Light background** | `F5F5F5` | Alternating table rows, card fills, callout boxes |
-| **Red panel bg** | `C0392B` | Left-side accent panels, header bars only — never full slide |
 
-**Applying the system in PptxGenJS:**
-```javascript
-// ALL slides — title, content, closing — use white background
-slide.background = { color: "FFFFFF" };
+---
 
-// Header bar (left-side accent or top bar)
-slide.addShape(pres.shapes.RECTANGLE, {
-  x: 0, y: 0, w: 13.3, h: 0.6,
-  fill: { color: "C0392B" }, line: { color: "C0392B" }
-});
-slide.addText("SLIDE TITLE", { x: 0.4, y: 0.1, w: 12, h: 0.4,
-  fontSize: 24, bold: true, color: "FFFFFF", fontFace: "Microsoft YaHei" });
+## Visual Review Gate (D)
 
-// Card with gray fill and red left accent
-slide.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 1.0, w: 5.8, h: 2.0,
-  fill: { color: "F5F5F5" }, line: { color: "CCCCCC", width: 0.5 }});
-slide.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 1.0, w: 0.08, h: 2.0,
-  fill: { color: "C0392B" }, line: { color: "C0392B" }});
-```
+When initiating a review (e.g., calling a subagent for QA), you **must** provide the **6-Item Input Package**:
 
-**Other palettes:** When the user specifies a different color scheme, follow their preference. The red/white/gray system is the default when nothing is specified.
+1.  **Brief**: Brand, Audience, Scene.
+2.  **Archetype & View Mode**: e.g., "Strategic Page" + "Document Mode".
+3.  **Slide Purpose**: One sentence: "What should the reader conclude after seeing this slide?"
+4.  **Preview Images**: High-resolution JPEGs of the slides.
+5.  **Evidence Source**: Where the data/facts came from (link or file path).
+6.  **Density Data**: Whitespace%, element count, overflow status.
+
+### Review Pass/Fail Criteria
+
+**D1 (Layout/Info) P1 Failures:**
+*   **Information Failure**: Key point is hidden or hierarchy is confusing.
+*   **Density Imbalance**: Too sparse for a Strategic page or too cramped for a Keynote.
+*   **Archetype Drift**: Changing design in a way that breaks the intended archetype.
+
+**D2 (Aesthetics) P1 Failures:**
+*   **Brand Shift**: Colors or fonts deviate from the locked Brand DNA.
+*   **Visual Inconsistency**: Mismatched borders, varied icon styles, or uneven spacing.
+
+---
+
+## Export Truth Gate (E)
+
+Before delivery, verify the "Native Truth" of the file:
+
+*   **Native Text**: Is text searchable and selectable? (Not flattened into images).
+*   **Native Charts**: Are charts editable in PowerPoint?
+*   **Native Tables**: Are tables PowerPoint table objects?
+*   **Fallback Check**: If non-native elements (e.g., complex SVG) are used, is the fallback high-res?
+*   **Repair Check**: Does the file open without a "Repair" dialog?
 
 ---
 
 ## Design Ideas
 
-**Don't create boring slides.** Plain bullets on a white background won't impress anyone. Consider ideas from this list for each slide.
+**Don't create boring slides.** Read [density-playbook.md](density-playbook.md) for 8 techniques to increase information density.
 
 ### Before Starting
 
