@@ -13,7 +13,7 @@ Usage:
 import sys
 import re
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from collections import defaultdict
 
 try:
@@ -394,7 +394,7 @@ class SVGQualityChecker:
         # Fix suggestions
         if self.summary['errors'] > 0 or self.summary['warnings'] > 0:
             print(f"\n[TIP] Common fixes:")
-            print(f"  1. viewBox issues: Ensure consistency with canvas format (see references/canvas-formats.md)")
+            print(f"  1. viewBox issues: Use 0 0 1280 720 for PPT 16:9 pages (see svg-craft.md)")
             print(f"  2. foreignObject: Use <text> + <tspan> for manual line breaks")
             print(f"  3. Font issues: Use system UI font stack")
 
@@ -442,6 +442,42 @@ class SVGQualityChecker:
         print(f"\n[REPORT] Check report exported: {output_file}")
 
 
+def find_svg_project_dirs(base_dir: str, source: str = None) -> List[Path]:
+    """Find directories that contain SVG files directly or in a known source subdirectory."""
+    root = Path(base_dir)
+    if not root.exists():
+        print(f"[ERROR] Directory does not exist: {root}")
+        return []
+
+    if root.is_file():
+        return [root.parent] if root.suffix.lower() == '.svg' else []
+
+    from constants import DIR_ALIAS_MAP
+
+    source_dirs = []
+    if source:
+        source_dirs.append(DIR_ALIAS_MAP.get(source, source))
+    source_dirs.extend(['pages', 'svg_output'])
+
+    projects = []
+    seen = set()
+    for candidate in [root, *root.rglob('*')]:
+        if not candidate.is_dir():
+            continue
+        if candidate.name in source_dirs and candidate.parent in seen:
+            continue
+
+        has_svgs = any(candidate.glob('*.svg'))
+        if not has_svgs:
+            has_svgs = any((candidate / name).is_dir() and any((candidate / name).glob('*.svg')) for name in source_dirs)
+
+        if has_svgs and candidate not in seen:
+            seen.add(candidate)
+            projects.append(candidate)
+
+    return sorted(projects)
+
+
 def main():
     """Main function"""
     if len(sys.argv) < 2:
@@ -462,6 +498,7 @@ def main():
 
     # Parse arguments
     target = None
+    all_base_dir = None
     expected_format = None
     source = None
 
@@ -475,7 +512,11 @@ def main():
             i += 2
         elif sys.argv[i] == '--all':
             target = '--all'
-            i += 1
+            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith('-'):
+                all_base_dir = sys.argv[i + 1]
+                i += 2
+            else:
+                i += 1
         elif not target:
             target = sys.argv[i]
             i += 1
@@ -484,10 +525,10 @@ def main():
 
     # Execute check
     if target == '--all':
-        # Check all example projects
-        base_dir = sys.argv[2] if len(sys.argv) > 2 else 'examples'
-        from project_utils import find_all_projects
-        projects = find_all_projects(base_dir)
+        base_dir = all_base_dir or 'examples'
+        projects = find_svg_project_dirs(base_dir, source=source)
+        if not projects:
+            print(f"[WARN] No SVG project directories found in {base_dir}")
 
         for project in projects:
             print(f"\n{'=' * 80}")
@@ -510,7 +551,7 @@ def main():
         checker.export_report(output_file)
 
     # Return exit code
-    if checker.summary['errors'] > 0:
+    if checker.summary['total'] == 0 or checker.summary['errors'] > 0:
         sys.exit(1)
     else:
         sys.exit(0)

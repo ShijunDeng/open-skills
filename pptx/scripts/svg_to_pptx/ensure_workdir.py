@@ -23,7 +23,6 @@ import sys
 import re
 import argparse
 from datetime import datetime
-from pathlib import Path
 
 
 def sanitize_topic(topic: str) -> str:

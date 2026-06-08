@@ -32,7 +32,7 @@ import re
 import math
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 
 # Fix garbled Chinese output on Windows

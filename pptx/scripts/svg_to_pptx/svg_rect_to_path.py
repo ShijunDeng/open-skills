@@ -23,7 +23,7 @@ import sys
 import re
 import argparse
 from pathlib import Path
-from typing import Tuple, Dict, List
+from typing import Tuple, List
 from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).parent))

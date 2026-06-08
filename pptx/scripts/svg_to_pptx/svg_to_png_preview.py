@@ -362,8 +362,7 @@ def main():
         "--source", "-s",
         type=str,
         default="pages",
-        choices=["pages", "output", "final"],
-        help="SVG 源目录（默认 pages）"
+        help="SVG source alias or subdirectory name (default: pages)"
     )
     parser.add_argument(
         "--suffix", "-S",
@@ -421,7 +420,7 @@ def main():
     success_count = 0
     fail_count = 0
 
-    for svg_file in sorted(svg_files):
+    for svg_file in svg_files:
         # Generate output filename
         output_name = svg_file.stem + args.suffix + ".png"
         output_path = preview_dir / output_name

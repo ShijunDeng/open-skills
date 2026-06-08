@@ -1,7 +1,7 @@
 """SVG to PPTX 目录与格式常量"""
 from pathlib import Path
 
-# Project root (three levels up: svg_to_pptx/ -> scripts/ -> pptx/ -> open-skills/)
+# Skill root (three levels up: svg_to_pptx/ -> scripts/ -> pptx/)
 DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # 标准子目录名称

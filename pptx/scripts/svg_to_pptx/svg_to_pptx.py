@@ -24,7 +24,6 @@ Notes:
 """
 
 import sys
-import os
 import argparse
 import re
 import zipfile
@@ -37,7 +36,6 @@ from xml.etree import ElementTree as ET
 # Check if python-pptx is installed
 try:
     from pptx import Presentation
-    from pptx.util import Emu
 except ImportError:
     print("Error: python-pptx library is missing")
     print("Please run: pip install python-pptx")
