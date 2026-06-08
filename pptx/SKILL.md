@@ -14,6 +14,7 @@ license: Proprietary. LICENSE.txt has complete terms
 | Read/analyze content | `python -m markitdown presentation.pptx` |
 | Edit or create from template | Read [editing.md](editing.md) |
 | Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
+| Create SVG-first crafted deck | Read [svg-craft.md](svg-craft.md) |
 | High-Density Layouts | Read [density-playbook.md](density-playbook.md) |
 
 ---
@@ -80,6 +81,10 @@ The default visual style is **white background + red accents + gray text hierarc
 | **Divider / border** | `CCCCCC` | Table borders, card outlines, separator lines |
 | **Light background** | `F5F5F5` | Alternating table rows, card fills, callout boxes |
 
+### Brand-Specific References
+
+- **Huawei / enterprise technical reporting**: Read [styles/huawei.md](styles/huawei.md) when the user asks for Huawei style, red enterprise reporting, technology solution decks, or dense Chinese business slides.
+
 ---
 
 ## Visual Review Gate (D)
@@ -115,6 +120,8 @@ Before delivery, verify the "Native Truth" of the file:
 *   **Native Tables**: Are tables PowerPoint table objects?
 *   **Fallback Check**: If non-native elements (e.g., complex SVG) are used, is the fallback high-res?
 *   **Repair Check**: Does the file open without a "Repair" dialog?
+
+For SVG-first decks, also run the SVG quality, preview, and conversion checks in [svg-craft.md](svg-craft.md).
 
 ---
 
@@ -602,6 +609,7 @@ pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 
 - `pip install "markitdown[pptx]"` - text extraction
 - `pip install Pillow` - thumbnail grids
+- `pip install -r scripts/svg_to_pptx/requirements.txt` - SVG preview and SVG-to-PPTX conversion
 - `npm install -g pptxgenjs` - creating from scratch
 - LibreOffice (`soffice`) - PDF conversion (auto-configured for sandboxed environments via `scripts/office/soffice.py`)
 - Poppler (`pdftoppm`) - PDF to images
